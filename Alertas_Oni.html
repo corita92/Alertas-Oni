@@ -15,8 +15,13 @@ body.panel{background:repeating-conic-gradient(#1b1f24 0 25%,#14171b 0 50%) 0 0/
   background:radial-gradient(closest-side,var(--accent),transparent);filter:blur(2vmin);opacity:0}
 .mask{position:relative;z-index:3;height:31vmin;aspect-ratio:431/520}
 .mask img{width:100%;height:100%;display:block}
+.raid-alert .mask{filter:drop-shadow(0 0 2vmin var(--accent)) drop-shadow(0 0 5vmin var(--accent))}
+.raid-alert .ring{border-width:1.2vmin;box-shadow:0 0 2vmin var(--accent),inset 0 0 2vmin var(--accent)}
+.raid-alert .kind{animation:raidTextPulse .75s ease-in-out infinite alternate}
+.raid-alert .aura{opacity:.35}
+@keyframes raidTextPulse{from{filter:brightness(1);text-shadow:0 0 1.4vmin var(--accent),0 .4vmin 0 #06201c}to{filter:brightness(1.8);text-shadow:0 0 2.8vmin var(--accent),0 0 5vmin var(--accent),0 .4vmin 0 #06201c}}
 .eye,.dim{position:absolute;top:41.6%;width:20%;height:9.4%;border-radius:50%;animation:glow 2.8s ease-in-out infinite}
-.eye{mix-blend-mode:screen;background:radial-gradient(closest-side,#d4feff 0%,#19f2e0 38%,rgba(25,242,224,0) 74%)}
+.eye{mix-blend-mode:screen;background:radial-gradient(closest-side,#fff 0%,var(--accent) 38%,color-mix(in srgb,var(--accent),transparent 100%) 74%)}
 .dim{opacity:0;mix-blend-mode:multiply;background:radial-gradient(closest-side,#2c6e62 0%,#2c6e62 45%,rgba(44,110,98,0) 100%);animation-name:dimout}
 .l{left:20.7%;--rot:14deg}.r{left:60%;--rot:-14deg}
 @keyframes glow{0%,100%{opacity:1;transform:rotate(var(--rot)) scale(1.08)}50%{opacity:.5;transform:rotate(var(--rot)) scale(.85)}}
@@ -74,30 +79,43 @@ function sparks(n){
 }
 
 async function play(ev){
-  const t=TYPES[ev.type], v=vmin();
+  const t=TYPES[ev.type], v=vmin(), isRaid=ev.type==='raid';
   document.documentElement.style.setProperty('--accent',t.color);
+  A.classList.toggle('raid-alert',isRaid);
   kindEl.textContent=t.kind(ev); detEl.textContent=t.detail(ev); nameEl.textContent=ev.name||'Anónimo';
   let fs=8.2; nameEl.style.fontSize=fs+'vmin';
   const limit=Math.min(innerWidth*.96,124*v)-10*v;
   while(nameEl.scrollWidth>limit && fs>2.8){ fs-=.4; nameEl.style.fontSize=fs+'vmin'; }
 
   A.style.visibility='visible';
-  mask.animate([{transform:'scale(2.4) rotate(-6deg)',opacity:0},{transform:'scale(.92) rotate(1deg)',opacity:1,offset:.7},{transform:'scale(1)',opacity:1}],
-    {duration:520,easing:'cubic-bezier(.2,.9,.3,1)',fill:'both'});
-  aura.animate([{opacity:0,transform:'scale(.5)'},{opacity:.6,offset:.3},{opacity:.22,transform:'scale(1)'}],{duration:1300,delay:300,fill:'both'});
-  plate.animate([{transform:'translateY(-4vmin) scale(.8)',opacity:0},{transform:'none',opacity:1}],{duration:460,delay:420,easing:'cubic-bezier(.2,.8,.2,1)',fill:'both'});
+  mask.animate(isRaid
+    ?[{transform:'scale(3.1) rotate(-16deg)',opacity:0,filter:'brightness(2.2)'},{transform:'scale(.88) rotate(5deg)',opacity:1,offset:.68},{transform:'scale(1) rotate(0)',opacity:1,filter:'brightness(1)'}]
+    :[{transform:'scale(2.4) rotate(-6deg)',opacity:0},{transform:'scale(.92) rotate(1deg)',opacity:1,offset:.7},{transform:'scale(1)',opacity:1}],
+    {duration:isRaid?850:520,easing:'cubic-bezier(.2,.9,.3,1)',fill:'both'});
+  aura.animate([{opacity:0,transform:'scale(.35)'},{opacity:isRaid?.95:.6,offset:.3},{opacity:isRaid?.48:.22,transform:'scale(1.12)'}],
+    {duration:isRaid?1750:1300,delay:isRaid?100:300,fill:'both'});
+  plate.animate([{transform:isRaid?'translateY(-7vmin) scale(.55)':'translateY(-4vmin) scale(.8)',opacity:0},{transform:'none',opacity:1}],
+    {duration:isRaid?650:460,delay:isRaid?520:420,easing:'cubic-bezier(.2,.8,.2,1)',fill:'both'});
   [kindEl,nameEl,detEl].forEach((el,i)=>el.animate([{opacity:0,transform:'translateY(1.4vmin)'},{opacity:1,transform:'none'}],
-    {duration:380,delay:640+i*110,easing:'ease-out',fill:'both'}));
+    {duration:isRaid?480:380,delay:(isRaid?760:640)+i*110,easing:'ease-out',fill:'both'}));
 
-  await sleep(330);   // impacto de la máscara
-  ring.animate([{opacity:.9,transform:'scale(.6)'},{opacity:0,transform:'scale(2.6)'}],{duration:800,easing:'ease-out'});
-  A.animate([{transform:'translate(0,0)'},{transform:'translate(-1.2vmin,.6vmin)'},{transform:'translate(1vmin,-.8vmin)'},
-    {transform:'translate(-.6vmin,.4vmin)'},{transform:'translate(0,0)'}],{duration:320});
-  sparks(ev.type==='raid'?44:22);
+  await sleep(isRaid?480:330);
+  const ringFrames=isRaid
+    ?[{opacity:1,transform:'scale(.35)'},{opacity:0,transform:'scale(3.1)'}]
+    :[{opacity:.9,transform:'scale(.6)'},{opacity:0,transform:'scale(2.6)'}];
+  ring.animate(ringFrames,{duration:isRaid?1150:800,easing:'ease-out'});
+  if(isRaid) ring.animate([{opacity:.8,transform:'scale(.55)'},{opacity:0,transform:'scale(2.4)'}],
+    {duration:950,delay:260,easing:'ease-out'});
+  A.animate(isRaid
+    ?[{transform:'translate(0,0)'},{transform:'translate(-2vmin,1vmin)'},{transform:'translate(2vmin,-1vmin)'},{transform:'translate(-1vmin,.5vmin)'},{transform:'translate(0,0)'}]
+    :[{transform:'translate(0,0)'},{transform:'translate(-1.2vmin,.6vmin)'},{transform:'translate(1vmin,-.8vmin)'},{transform:'translate(-.6vmin,.4vmin)'},{transform:'translate(0,0)'}],
+    {duration:isRaid?520:320});
+  sparks(isRaid?64:22);
 
   await sleep(t.hold*1000);
   await A.animate([{opacity:1,transform:'none'},{opacity:0,transform:'translateY(-3vmin) scale(.94)'}],{duration:450,fill:'forwards'}).finished;
-  document.getAnimations().filter(a=>!(a instanceof CSSAnimation)).forEach(a=>a.cancel()); A.style.visibility='hidden';
+  document.getAnimations().filter(a=>!(a instanceof CSSAnimation)).forEach(a=>a.cancel());
+  A.classList.remove('raid-alert'); A.style.visibility='hidden';
 }
 
 // ===== Panel de pruebas: solo aparece al abrir el archivo en un navegador común (no en OBS) =====
